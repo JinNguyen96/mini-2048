@@ -142,7 +142,7 @@ function App() {
       console.log(map)
       generateNewRandomTile(newMap)
     }
-  }, [cells])
+  }, [cells, generateNewMap, generateNewRandomTile, isAbleToExecute, setCells])
 
   const handlePressUp = useCallback(() => {
     const currenCells = Object.keys(cells).filter(key => cells[Number(key)] !== 0)
@@ -207,7 +207,7 @@ function App() {
       console.log(map)
       generateNewRandomTile(newMap)
     }
-  }, [cells])
+  }, [cells, generateNewMap, generateNewRandomTile, isAbleToExecute, setCells])
 
   const handlePressRight = useCallback(() => {
     const currenCells = Object.keys(cells).filter(key => cells[Number(key)] !== 0)
@@ -272,7 +272,7 @@ function App() {
       console.log(map)
       generateNewRandomTile(newMap)
     }
-  }, [cells])
+  }, [cells, generateNewMap, generateNewRandomTile, isAbleToExecute, setCells])
   
   const handlePressDown = useCallback(() => {
     const currenCells = Object.keys(cells).filter(key => cells[Number(key)] !== 0)
@@ -337,7 +337,7 @@ function App() {
       console.log(map)
       generateNewRandomTile(newMap)
     }
-  }, [cells])
+  }, [cells, generateNewMap, generateNewRandomTile, isAbleToExecute, setCells])
 
   // handle key press
   useEffect(() => {
