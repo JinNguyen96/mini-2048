@@ -76,6 +76,8 @@ function App() {
     for (let i = 0; i < entries.length; i++) {
       generateNewTile(Number(entries[i][0]), entries[i][1])
     }
+
+    generateNewRandomTile(_cells)
     // end
   }
 
@@ -140,7 +142,6 @@ function App() {
       generateNewMap(newMap)
       console.log('press left result: ')
       console.log(map)
-      generateNewRandomTile(newMap)
     }
   }, [cells, generateNewMap, generateNewRandomTile, isAbleToExecute, setCells])
 
@@ -205,7 +206,6 @@ function App() {
       generateNewMap(newMap)
       console.log('press up result: ')
       console.log(map)
-      generateNewRandomTile(newMap)
     }
   }, [cells, generateNewMap, generateNewRandomTile, isAbleToExecute, setCells])
 
@@ -270,7 +270,6 @@ function App() {
       generateNewMap(newMap)
       console.log('press right result: ')
       console.log(map)
-      generateNewRandomTile(newMap)
     }
   }, [cells, generateNewMap, generateNewRandomTile, isAbleToExecute, setCells])
   
@@ -335,7 +334,6 @@ function App() {
       generateNewMap(newMap)
       console.log('press down result: ')
       console.log(map)
-      generateNewRandomTile(newMap)
     }
   }, [cells, generateNewMap, generateNewRandomTile, isAbleToExecute, setCells])
 
