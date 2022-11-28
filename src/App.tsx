@@ -20,8 +20,8 @@ function App() {
 
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const generateNewTile = (pos: number, value: number) => {
-    if (containerRef.current) {
+  const generateNewTile = (pos: number, value: number, hasAnimation?: boolean) => {
+    if (containerRef.current && value) {
       const col = Math.floor(pos / 4)
       const row = pos % 4
       const left = row * 10 + 0.5
@@ -30,7 +30,7 @@ function App() {
       tileEl.className = `number-cell number-cell-${value}`
       tileEl.innerText = value ? value.toString() : ""
 
-      tileEl.setAttribute('style', `left: ${left}vmin; top: ${top}vmin;`)
+      tileEl.setAttribute('style', `left: ${left}vmin; top: ${top}vmin;${!hasAnimation ? 'animation: none' : ''}`)
       tileEl.setAttribute('position', `${pos}`)
       containerRef.current?.appendChild(tileEl)
     }
@@ -49,17 +49,21 @@ function App() {
     }
 
     // get empty cells
-    const emptyCells = Object.entries(cellValue).filter(cell => cell[1] === 0).map(cell => Number(cell[0]))
+    const emptyCells = Object.entries(cellValue).filter(cell => !cell[1]).map(cell => Number(cell[0] ?? 0))
 
     // choose cell to show tile
-    const cellToShow = Number(emptyCells[randomInRange(0, emptyCells.length - 1)])
+    let random 
+    while (random === undefined) {
+      random = emptyCells[randomInRange(0, emptyCells.length - 1)]
+    }
+    const cellToShow = random 
     if (containerRef) {
       setCells({...(cellValue), [cellToShow]: tileValue})
-      generateNewTile(cellToShow, tileValue)
+      generateNewTile(cellToShow, tileValue, true)
     }
   }
 
-  const generateNewMap = (_cells: Record<number, number>) => {
+  const generateNewMap = async (_cells: Record<number, number>, hasAnimateList: Record<number, boolean>) => {
     const entries = Object.entries(_cells)
 
     // start set new left & top for every entries for animation here
@@ -69,12 +73,12 @@ function App() {
     // wait for 0.3s (animation finished) then run these
     // edit here
     const listNumberCell = document.getElementsByClassName('number-cell')
-    for (let i = 0; i < listNumberCell.length; i++) {
-      listNumberCell[i].remove()
+    while (listNumberCell[0]) {
+      listNumberCell[0].parentNode?.removeChild(listNumberCell[0])
     }
     
     for (let i = 0; i < entries.length; i++) {
-      generateNewTile(Number(entries[i][0]), entries[i][1])
+      generateNewTile(Number(entries[i][0]), entries[i][1], hasAnimateList[Number(entries[i][0])])
     }
 
     generateNewRandomTile(_cells)
@@ -106,16 +110,22 @@ function App() {
             map[row][col] = 0
           }
           newPos++
+        } else {
+          map[row][col] = 0
         }
       }
     }
 
+    const hasAnimateCoordinate: Record<number, number> = {}
+    const hasAnimateMap: Record<number, boolean> = {}
+
     // sum closest values from left to right
     for (let row = 0; row < 4; row++) {
       for (let col = 0; col < 3; col++) {
-        if (map[row][col] === map[row][col + 1]) {
+        if (map[row][col] === map[row][col + 1] && !!map[row][col]) {
           map[row][col] = map[row][col] + map[row][col + 1]
           map[row][col + 1] = 0 
+          hasAnimateCoordinate[row] = col
         }
       }
     }
@@ -124,22 +134,29 @@ function App() {
     for (let row = 0; row < 4; row++) {
       let newPos = 0
       for (let col = 0; col < 4; col++) {
-        if (map[row][col] > 0) {
+        if (!!map[row][col]) {
           map[row][newPos] = map[row][col]
+          if (hasAnimateCoordinate[row] === col) {
+            hasAnimateMap[row * 4 + newPos] = true
+          }
           newMap[row * 4 + newPos] = map[row][col]
           if (col !== newPos) {
             map[row][col] = 0
+            newMap[row * 4 + col] = 0 
           }
           newPos++
         } else {
-          newMap[row * 4 + col] = map[row][col]
+          newMap[row * 4 + col] = map[row][col] ?? 0
+          if (hasAnimateCoordinate[row] === col) {
+            hasAnimateMap[row * 4 + col] = true
+          }
         }
       }
     }
 
     if (isAbleToExecute(newMap)) {
       setCells(newMap)
-      generateNewMap(newMap)
+      generateNewMap(newMap, hasAnimateMap)
       console.log('press left result: ')
       console.log(map)
     }
@@ -170,9 +187,14 @@ function App() {
             map[row][col] = 0
           }
           newPos++
+        } else {
+          map[row][col] = 0
         }
       }
     }
+
+    const hasAnimateCoordinate: Record<number, number> = {}
+    const hasAnimateMap: Record<number, boolean> = {}
 
     // sum closest values from top to bottom 
     for (let col = 0; col < 4; col++) {
@@ -180,6 +202,7 @@ function App() {
         if (map[row][col] === map[row + 1][col] && !!map[row][col]) {
           map[row][col] = map[row][col] + map[row + 1][col]
           map[row + 1][col] = 0 
+          hasAnimateCoordinate[row] = col
         }
       }
     }
@@ -191,19 +214,26 @@ function App() {
         if (map[row][col] > 0) {
           map[newPos][col] = map[row][col]
           newMap[newPos * 4 + col] = map[row][col]
+          if (hasAnimateCoordinate[row] === col) {
+            hasAnimateMap[newPos * 4 + col] = true
+          }
           if (row !== newPos) {
             map[row][col] = 0
+            newMap[row * 4 + col] = 0 
           }
           newPos++
         } else {
           newMap[row * 4 + col] = map[row][col]
+          if (hasAnimateCoordinate[row] === col) {
+            hasAnimateMap[row * 4 + col] = true
+          }
         }
       }
     }
 
     if (isAbleToExecute(newMap)) {
       setCells(newMap)
-      generateNewMap(newMap)
+      generateNewMap(newMap, hasAnimateMap)
       console.log('press up result: ')
       console.log(map)
     }
@@ -229,21 +259,26 @@ function App() {
       let newPos = 3 
       for (let col = 3; col >= 0; col--) {
         if (map[row][col] > 0) {
-          map[row][newPos] = map[row][col]
+          map[row][newPos] = map[row][col] ?? 0
           if (col !== newPos) {
             map[row][col] = 0
           }
           newPos--
+        } else {
+          map[row][col] = 0
         }
       }
     }
 
+    const hasAnimateCoordinate: Record<number, number> = {}
+    const hasAnimateMap: Record<number, boolean> = {}
     // sum closest values from right to left 
     for (let row = 0; row < 4; row++) {
       for (let col = 3; col > 0; col--) {
-        if (map[row][col] === map[row][col - 1]) {
+        if (map[row][col] === map[row][col - 1] && !!map[row][col]) {
           map[row][col] = map[row][col] + map[row][col - 1]
           map[row][col - 1] = 0 
+          hasAnimateCoordinate[row] = col
         }
       }
     }
@@ -253,21 +288,28 @@ function App() {
       let newPos = 3 
       for (let col = 3; col >= 0; col--) {
         if (map[row][col] > 0) {
-          map[row][newPos] = map[row][col]
+          map[row][newPos] = map[row][col] ?? 0
           newMap[row * 4 + newPos] = map[row][col]
+          if (hasAnimateCoordinate[row] === col) {
+            hasAnimateMap[row * 4 + newPos] = true
+          }
           if (col !== newPos) {
             map[row][col] = 0
+            newMap[row * 4 + col] = 0 
           }
           newPos--
         } else {
           newMap[row * 4 + col] = map[row][col]
+          if (hasAnimateCoordinate[row] === col) {
+            hasAnimateMap[row * 4 + col] = true
+          }
         }
       }
     }
 
     if (isAbleToExecute(newMap)) {
       setCells(newMap)
-      generateNewMap(newMap)
+      generateNewMap(newMap, hasAnimateMap)
       console.log('press right result: ')
       console.log(map)
     }
@@ -298,9 +340,14 @@ function App() {
             map[row][col] = 0
           }
           newPos--
+        } else {
+          map[row][col] = 0
         }
       }
     }
+    
+    const hasAnimateCoordinate: Record<number, number> = {}
+    const hasAnimateMap: Record<number, boolean> = {}
 
     // sum closest values from bottom to top 
     for (let col = 0; col < 4; col++) {
@@ -308,6 +355,7 @@ function App() {
         if (map[row][col] === map[row - 1][col] && !!map[row][col]) {
           map[row][col] = map[row][col] + map[row - 1][col]
           map[row - 1][col] = 0 
+          hasAnimateCoordinate[row] = col
         }
       }
     }
@@ -319,19 +367,26 @@ function App() {
         if (map[row][col] > 0) {
           map[newPos][col] = map[row][col]
           newMap[newPos * 4 + col] = map[row][col]
+          if (hasAnimateCoordinate[row] === col) {
+            hasAnimateMap[newPos * 4 + col] = true
+          }
           if (row !== newPos) {
             map[row][col] = 0
+            newMap[row * 4 + col] = 0 
           }
           newPos--
         } else {
           newMap[row * 4 + col] = map[row][col]
+          if (hasAnimateCoordinate[row] === col) {
+            hasAnimateMap[row * 4 + col] = true
+          }
         }
       }
     }
 
     if (isAbleToExecute(newMap)) {
       setCells(newMap)
-      generateNewMap(newMap)
+      generateNewMap(newMap, hasAnimateMap)
       console.log('press down result: ')
       console.log(map)
     }
