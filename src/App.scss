@@ -64,7 +64,7 @@
     justify-content: center;
     font-weight: 700;
     font-size: 4vmin;
-    transition: all cubic-bezier(0.075, 0.82, 0.165, 1) .3s;
+    transition: all linear .3s;
     animation: appear 0.3s;
     align-items: center;
     color: #f9f6f2;

@@ -19,6 +19,8 @@ function App() {
   const [largestValue, setLargestValue] = useState<number>(2)
 
   const containerRef = useRef<HTMLDivElement>(null)
+  const tileElementAfterRef = useRef<Record<number, number> | null>(null)
+  const tileElementBeforeRef = useRef<Record<number, number> | null>(null)
 
   const generateNewTile = (pos: number, value: number, hasAnimation?: boolean) => {
     if (containerRef.current && value) {
@@ -63,42 +65,35 @@ function App() {
     }
   }
 
-  const generateNewMap = async (_cells: Record<number, number>, hasAnimateList: Record<number, boolean>) => {
+  const generateNewMap = async (_cells: Record<number, number>, hasAnimateList: Record<number, boolean>, direction: DirectionType) => {
     const entries = Object.entries(_cells)
+    const listNumberCell = document.getElementsByClassName('number-cell')
 
     // start set new left & top for every entries for animation here
     // edit here
+    
     // end 
 
     // wait for 0.3s (animation finished) then run these
     // edit here
-    const listNumberCell = document.getElementsByClassName('number-cell')
-    while (listNumberCell[0]) {
-      listNumberCell[0].parentNode?.removeChild(listNumberCell[0])
-    }
-    
-    for (let i = 0; i < entries.length; i++) {
-      generateNewTile(Number(entries[i][0]), entries[i][1], hasAnimateList[Number(entries[i][0])])
-    }
+    setTimeout(() => {
+      while (listNumberCell[0]) {
+        listNumberCell[0].parentNode?.removeChild(listNumberCell[0])
+      }
+      
+      for (let i = 0; i < entries.length; i++) {
+        generateNewTile(Number(entries[i][0]), entries[i][1], hasAnimateList[Number(entries[i][0])])
+      }
 
-    generateNewRandomTile(_cells)
+      generateNewRandomTile(_cells)
+    }, 300)
     // end
   }
 
-  const handlePressLeft = useCallback(() => {
-    const currenCells = Object.keys(cells).filter(key => cells[Number(key)] !== 0)
+  const handlePressLeft = useCallback((map: number[][]) => {
     const newMap: Record<number, number> = {}
-    let map = [
-      [0, 0, 0, 0],
-      [0, 0, 0, 0],
-      [0, 0, 0, 0],
-      [0, 0, 0, 0],
-    ]
-    currenCells.forEach(key => {
-      const col = Number(key) % 4
-      const row = Math.floor(Number(key) / 4)
-      map[row][col] = cells[Number(key)] 
-    })
+    const hasAnimateCoordinate: Record<number, number> = {}
+    const hasAnimateMap: Record<number, boolean> = {}
     
     // move all value to the left
     for (let row = 0; row < 4; row++) {
@@ -109,23 +104,15 @@ function App() {
           if (col !== newPos) {
             map[row][col] = 0
           }
+          // sum closest values from left to right
+          if (newPos && map[row][newPos] === map[row][newPos - 1] && !!map[row][newPos]) {
+            map[row][newPos - 1] = map[row][newPos] + map[row][newPos - 1]
+            map[row][newPos] = 0 
+            hasAnimateCoordinate[row] = newPos - 1 
+          }
           newPos++
         } else {
           map[row][col] = 0
-        }
-      }
-    }
-
-    const hasAnimateCoordinate: Record<number, number> = {}
-    const hasAnimateMap: Record<number, boolean> = {}
-
-    // sum closest values from left to right
-    for (let row = 0; row < 4; row++) {
-      for (let col = 0; col < 3; col++) {
-        if (map[row][col] === map[row][col + 1] && !!map[row][col]) {
-          map[row][col] = map[row][col] + map[row][col + 1]
-          map[row][col + 1] = 0 
-          hasAnimateCoordinate[row] = col
         }
       }
     }
@@ -154,28 +141,16 @@ function App() {
       }
     }
 
-    if (isAbleToExecute(newMap)) {
-      setCells(newMap)
-      generateNewMap(newMap, hasAnimateMap)
-      console.log('press left result: ')
-      console.log(map)
-    }
+    console.log('press left result: ')
+    console.log(map)
+    return {newMap, hasAnimateMap}
   }, [cells, generateNewMap, generateNewRandomTile, isAbleToExecute, setCells])
 
-  const handlePressUp = useCallback(() => {
-    const currenCells = Object.keys(cells).filter(key => cells[Number(key)] !== 0)
+  const handlePressUp = useCallback((map: number[][]) => {
     const newMap: Record<number, number> = {}
-    let map = [
-      [0, 0, 0, 0],
-      [0, 0, 0, 0],
-      [0, 0, 0, 0],
-      [0, 0, 0, 0],
-    ]
-    currenCells.forEach(key => {
-      const col = Number(key) % 4
-      const row = Math.floor(Number(key) / 4)
-      map[row][col] = cells[Number(key)] 
-    })
+
+    const hasAnimateCoordinate: Record<number, number> = {}
+    const hasAnimateMap: Record<number, boolean> = {}
     
     // move all value to the top
     for (let col = 0; col < 4; col++) {
@@ -186,23 +161,15 @@ function App() {
           if (row !== newPos) {
             map[row][col] = 0
           }
+          // sum closest values from top to bottom 
+          if (newPos && map[newPos][col] === map[newPos - 1][col] && !!map[newPos][col]) {
+            map[newPos - 1][col] = map[newPos][col] + map[newPos - 1][col]
+            map[newPos][col] = 0 
+            hasAnimateCoordinate[newPos - 1] = col
+          }
           newPos++
         } else {
           map[row][col] = 0
-        }
-      }
-    }
-
-    const hasAnimateCoordinate: Record<number, number> = {}
-    const hasAnimateMap: Record<number, boolean> = {}
-
-    // sum closest values from top to bottom 
-    for (let col = 0; col < 4; col++) {
-      for (let row = 0; row < 3; row++) {
-        if (map[row][col] === map[row + 1][col] && !!map[row][col]) {
-          map[row][col] = map[row][col] + map[row + 1][col]
-          map[row + 1][col] = 0 
-          hasAnimateCoordinate[row] = col
         }
       }
     }
@@ -231,28 +198,17 @@ function App() {
       }
     }
 
-    if (isAbleToExecute(newMap)) {
-      setCells(newMap)
-      generateNewMap(newMap, hasAnimateMap)
-      console.log('press up result: ')
-      console.log(map)
-    }
+    console.log('press up result: ')
+    console.log(map)
+
+    return {newMap, hasAnimateMap}
   }, [cells, generateNewMap, generateNewRandomTile, isAbleToExecute, setCells])
 
-  const handlePressRight = useCallback(() => {
-    const currenCells = Object.keys(cells).filter(key => cells[Number(key)] !== 0)
+  const handlePressRight = useCallback((map: number[][]) => {
     const newMap: Record<number, number> = {}
-    let map = [
-      [0, 0, 0, 0],
-      [0, 0, 0, 0],
-      [0, 0, 0, 0],
-      [0, 0, 0, 0],
-    ]
-    currenCells.forEach(key => {
-      const col = Number(key) % 4
-      const row = Math.floor(Number(key) / 4)
-      map[row][col] = cells[Number(key)] 
-    })
+
+    const hasAnimateCoordinate: Record<number, number> = {}
+    const hasAnimateMap: Record<number, boolean> = {}
     
     // move all value to the right 
     for (let row = 0; row < 4; row++) {
@@ -263,22 +219,15 @@ function App() {
           if (col !== newPos) {
             map[row][col] = 0
           }
+          // sum closest values from right to left 
+          if (newPos < 3 && map[row][newPos] === map[row][newPos + 1] && !!map[row][newPos]) {
+            map[row][newPos + 1] = map[row][newPos] + map[row][newPos + 1]
+            map[row][newPos] = 0 
+            hasAnimateCoordinate[row] = newPos + 1 
+          }
           newPos--
         } else {
           map[row][col] = 0
-        }
-      }
-    }
-
-    const hasAnimateCoordinate: Record<number, number> = {}
-    const hasAnimateMap: Record<number, boolean> = {}
-    // sum closest values from right to left 
-    for (let row = 0; row < 4; row++) {
-      for (let col = 3; col > 0; col--) {
-        if (map[row][col] === map[row][col - 1] && !!map[row][col]) {
-          map[row][col] = map[row][col] + map[row][col - 1]
-          map[row][col - 1] = 0 
-          hasAnimateCoordinate[row] = col
         }
       }
     }
@@ -307,28 +256,17 @@ function App() {
       }
     }
 
-    if (isAbleToExecute(newMap)) {
-      setCells(newMap)
-      generateNewMap(newMap, hasAnimateMap)
-      console.log('press right result: ')
-      console.log(map)
-    }
+    console.log('press right result: ')
+    console.log(map)
+
+    return {newMap, hasAnimateMap}
   }, [cells, generateNewMap, generateNewRandomTile, isAbleToExecute, setCells])
   
-  const handlePressDown = useCallback(() => {
-    const currenCells = Object.keys(cells).filter(key => cells[Number(key)] !== 0)
+  const handlePressDown = useCallback((map: number[][]) => {
     const newMap: Record<number, number> = {}
-    let map = [
-      [0, 0, 0, 0],
-      [0, 0, 0, 0],
-      [0, 0, 0, 0],
-      [0, 0, 0, 0],
-    ]
-    currenCells.forEach(key => {
-      const col = Number(key) % 4
-      const row = Math.floor(Number(key) / 4)
-      map[row][col] = cells[Number(key)] 
-    })
+
+    const hasAnimateCoordinate: Record<number, number> = {}
+    const hasAnimateMap: Record<number, boolean> = {}
     
     // move all value to the bottom 
     for (let col = 0; col < 4; col++) {
@@ -339,6 +277,12 @@ function App() {
           if (row !== newPos) {
             map[row][col] = 0
           }
+          // sum closest values from bottom to top 
+          if (newPos < 3 && map[newPos][col] === map[newPos + 1][col] && !!map[newPos][col]) {
+            map[newPos + 1][col] = map[newPos][col] + map[newPos + 1][col]
+            map[newPos][col] = 0 
+            hasAnimateCoordinate[newPos + 1] = col
+          }
           newPos--
         } else {
           map[row][col] = 0
@@ -346,19 +290,6 @@ function App() {
       }
     }
     
-    const hasAnimateCoordinate: Record<number, number> = {}
-    const hasAnimateMap: Record<number, boolean> = {}
-
-    // sum closest values from bottom to top 
-    for (let col = 0; col < 4; col++) {
-      for (let row = 3; row > 0; row--) {
-        if (map[row][col] === map[row - 1][col] && !!map[row][col]) {
-          map[row][col] = map[row][col] + map[row - 1][col]
-          map[row - 1][col] = 0 
-          hasAnimateCoordinate[row] = col
-        }
-      }
-    }
 
     // move all value to the bottom again
     for (let col = 0; col < 4; col++) {
@@ -384,30 +315,58 @@ function App() {
       }
     }
 
-    if (isAbleToExecute(newMap)) {
-      setCells(newMap)
-      generateNewMap(newMap, hasAnimateMap)
-      console.log('press down result: ')
-      console.log(map)
-    }
+    console.log('press down result: ')
+    console.log(map)
+    return {newMap, hasAnimateMap}
   }, [cells, generateNewMap, generateNewRandomTile, isAbleToExecute, setCells])
 
   // handle key press
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => { 
       if (Object.values(DirectionType).includes(e.keyCode)) {
+        tileElementBeforeRef.current = {...cells}
+        const currenCells = Object.keys(cells).filter(key => cells[Number(key)] !== 0)
+        let map = [
+          [0, 0, 0, 0],
+          [0, 0, 0, 0],
+          [0, 0, 0, 0],
+          [0, 0, 0, 0],
+        ]
+        currenCells.forEach(key => {
+          const col = Number(key) % 4
+          const row = Math.floor(Number(key) / 4)
+          map[row][col] = cells[Number(key)] 
+        })
+
+        let result = {newMap: {}, hasAnimateMap: {}}
         switch (e.keyCode) {
           case DirectionType.Left:
-            handlePressLeft()
+            result = handlePressLeft(map)
+            if (isAbleToExecute(result.newMap)) {
+              setCells(result.newMap)
+              generateNewMap(result.newMap, result.hasAnimateMap, DirectionType.Left)
+            }
             break 
           case DirectionType.Up:
-            handlePressUp()
+            result = handlePressUp(map)
+            if (isAbleToExecute(result.newMap)) {
+              setCells(result.newMap)
+              generateNewMap(result.newMap, result.hasAnimateMap, DirectionType.Up)
+            }
             break
           case DirectionType.Right:
-            handlePressRight()
+            result = handlePressRight(map)
+            if (isAbleToExecute(result.newMap)) {
+              setCells(result.newMap)
+              generateNewMap(result.newMap, result.hasAnimateMap, DirectionType.Right)
+            }
             break
           default:
-            handlePressDown()
+            result = handlePressDown(map)
+            if (isAbleToExecute(result.newMap)) {
+              setCells(result.newMap)
+              generateNewMap(result.newMap, result.hasAnimateMap, DirectionType.Down)
+            }
             break
         }
       }
